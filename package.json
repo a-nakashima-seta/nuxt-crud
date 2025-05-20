@@ -20,6 +20,8 @@
     "vue-router": "^4.5.1"
   },
   "devDependencies": {
+    "@iconify-json/logos": "^1.2.4",
+    "@nuxt/icon": "^1.13.0",
     "@types/bcrypt": "^5.0.2"
   }
 }

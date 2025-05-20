@@ -4,7 +4,8 @@
 
 <template>
     <div>
-        <h1 class="font-bold text-3xl">home</h1>
+        <CommonHeader class="z-10 relative"/>
+        <CommonSideMenu class="z-0"/>
         <slot />
     </div>
 </template>
