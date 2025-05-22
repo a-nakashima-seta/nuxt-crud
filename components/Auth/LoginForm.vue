@@ -2,9 +2,10 @@
 import * as z from 'zod'
 import type { FormSubmitEvent } from '@nuxt/ui'
 
+// Zod初期化の記述
 const schema = z.object({
     email: z.string().email('Invalid email'),
-    password: z.string().min(8, 'Must be at least 8 characters')
+    password: z.string().min(6, 'Must be at least 6 characters')
 })
 
 type Schema = z.output<typeof schema>
@@ -14,15 +15,28 @@ const state = reactive<Partial<Schema>>({
     password: undefined
 })
 
+// フォーム送信後のミニポップアップ
 const toast = useToast()
-async function onSubmit(event: FormSubmitEvent<Schema>) {
-    toast.add({ title: 'Success', description: 'The form has been submitted.', color: 'success' })
-    console.log(event.data)
+
+// 登録処理のハンドラー
+
+const { logIn } = useLogIn()
+
+const onSubmit = async (event: FormSubmitEvent<Schema>) => {
+    try {
+        console.table(event.data)
+
+        await logIn(event.data.email, event.data.password)
+
+        toast.add({ title: 'Success', description: 'ログインしました。', color: 'success' })
+    } catch (err: any) {
+        toast.add({ title: 'ログイン失敗', description: err.statusMessage || 'エラーが発生しました', color: 'error' })
+    }
 }
 </script>
 
 <template>
-    <UForm :schema="schema" :state="state" class="space-y-4" @submit="onSubmit">
+    <UForm :schema="schema" :state="state" class="space-y-4" @submit.prevent="onSubmit">
         <UFormField label="メールアドレス" name="email">
             <UInput v-model="state.email" />
         </UFormField>

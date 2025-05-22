@@ -21,14 +21,14 @@ const state = ref<Partial<Schema>>({
 const toast = useToast()
 
 
-const { signUp } = useSignUp()
+// const { signUp } = useSignUp()
 
 // 登録処理のハンドラー
 const onSubmit = async (event: FormSubmitEvent<Schema>) => {
     try {
         console.table(event.data)
 
-        await signUp(event.data.username, event.data.email, event.data.password)
+        // await signUp(event.data.username, event.data.email, event.data.password)
         toast.add({ title: '登録完了', description: 'ユーザー登録が完了しました', color: 'success' })
 
     } catch (err: any) {
