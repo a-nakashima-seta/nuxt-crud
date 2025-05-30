@@ -20,8 +20,31 @@ composables\useAuth.ts
 【希望する結果】
 - ログイン処理に関して、登録済みのユーザー情報でログインが成功した場合にuseAuth.tsで保持している状態を切り替えたい。
 まずはテストとして（赤い丸：ログアウト中）（緑の丸：ログイン中）というように見た目で認証状態がわかるようにしたい。
+- ↑実装完了できました。セッション状態の保持のフェーズに移行します。再読み込み時や一度タブを閉じ再度アクセスした場合にもセッションの状態に応じて（赤い丸：ログアウト中）（緑の丸：ログイン中）を切り替えたいです。
 
-【現状のログイン関連コード】
+【現状の関連コード】
+layouts\auth\index.vue
+<script setup lang="ts">
+const { isAuthenticated } = useAuth()
+
+</script>
+
+<template>
+    <div>
+        <div class="flex items-center space-x-2">
+            <span :class="[
+                'w-3 h-3 rounded-full',
+                isAuthenticated ? 'bg-green-500' : 'bg-red-800'
+            ]"></span>
+            <span>{{ isAuthenticated ? 'ログイン中' : 'ログアウト中' }}</span>
+        </div>
+        <h1 class="font-bold text-3xl text-center m-4">Auth</h1>
+        <slot />
+    </div>
+</template>
+
+<style scoped></style>
+
 components\Auth\index.vue
 <script setup lang="ts">
 import type { TabsItem } from '@nuxt/ui'
@@ -53,6 +76,7 @@ const items = [
         </template>
     </UTabs>
 </template>
+
 
 components\Auth\LoginForm.vue
 <script setup lang="ts">
@@ -108,46 +132,63 @@ const onSubmit = async (event: FormSubmitEvent<Schema>) => {
     </UForm>
 </template>
 
+
 composables\useLogIn.ts
+// composables/useLogIn.ts
 export const useLogIn = () => {
+    const { setAuth } = useAuth()
+
     const logIn = async (email: string, password: string) => {
         try {
             const { data, error } = await useFetch('/api/login', {
                 method: 'POST',
-                body: {
-                    email,
-                    password
-                },
+                body: { email, password },
             })
 
             if (error.value) {
-                // サーバーから返されたエラー情報を保持
                 const statusMessage = error.value.data?.statusMessage || error.value.statusMessage || 'ログインに失敗しました。'
                 const statusCode = error.value.statusCode || 401
-                throw createError({
-                    statusCode,
-                    statusMessage
-                })
+                throw createError({ statusCode, statusMessage })
+            }
+
+            // 認証状態を更新
+            if (data.value?.user) {
+                setAuth(data.value.user)
             }
 
             return data.value
-
         } catch (err: any) {
-            // エラーオブジェクトをそのまま再スロー
-            if (err.statusCode && err.statusMessage) {
-                throw err
-            }
-            // 予期せぬエラーの場合
-            throw createError({
-                statusCode: 500,
-                statusMessage: '予期せぬエラーが発生しました。'
-            })
+            throw err.statusCode ? err : createError({ statusCode: 500, statusMessage: '予期せぬエラーが発生しました。' })
         }
     }
+
+    return { logIn }
+}
+
+
+composables\useAuth.ts
+export const useAuth = () => {
+    const isAuthenticated = useState<boolean>('auth:isAuthenticated', () => false)
+    const user = useState<{ id: number; email: string; username: string } | null>('auth:user', () => null)
+
+    const setAuth = (userData: { id: number; email: string; username: string }) => {
+        isAuthenticated.value = true
+        user.value = userData
+    }
+
+    const clearAuth = () => {
+        isAuthenticated.value = false
+        user.value = null
+    }
+
     return {
-        logIn
+        isAuthenticated,
+        user,
+        setAuth,
+        clearAuth,
     }
 }
+
 
 server\api\login.post.ts
 import { prisma } from '~/server/prisma/client'
@@ -198,6 +239,7 @@ export default defineEventHandler(async (event) => {
     }
 
 })
+
 
 【制約条件など】
 - TypeScriptを使用

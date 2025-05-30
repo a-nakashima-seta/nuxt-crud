@@ -1,5 +1,9 @@
 <script setup lang="ts">
-const { isAuthenticated } = useAuth()
+const { isAuthenticated, fetchSession } = useAuth()
+
+onMounted(() => {
+  fetchSession()
+})
 
 </script>
 
