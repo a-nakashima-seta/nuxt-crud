@@ -10,18 +10,27 @@ export const useLogIn = () => {
             })
 
             if (error.value) {
-                const statusCode = error.value?.statusCode || 500
-                const message = error.value?.statusMessage || 'ログインに失敗しました。'
+                // サーバーから返されたエラー情報を保持
+                const statusMessage = error.value.data?.statusMessage || error.value.statusMessage || 'ログインに失敗しました。'
+                const statusCode = error.value.statusCode || 401
                 throw createError({
-                    statusCode: statusCode,
-                    statusMessage: message
+                    statusCode,
+                    statusMessage
                 })
             }
 
             return data.value
 
         } catch (err: any) {
-            throw err
+            // エラーオブジェクトをそのまま再スロー
+            if (err.statusCode && err.statusMessage) {
+                throw err
+            }
+            // 予期せぬエラーの場合
+            throw createError({
+                statusCode: 500,
+                statusMessage: '予期せぬエラーが発生しました。'
+            })
         }
     }
     return {
